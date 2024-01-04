@@ -46,30 +46,31 @@ def create_csv_from_data(data, campaign_id):
     # Transformer les données en DataFrame
     df = pd.DataFrame(data)
 
-    # Convertir 'createdAt' en datetime pour pouvoir trouver la date la plus récente
+    # Convertir 'createdAt' en datetime pour la dernière date d'ouverture
     df['createdAt'] = pd.to_datetime(df['createdAt'])
 
-    # Grouper par email et obtenir les numéros de séquence et la date la plus récente
-    grouped = df.groupby('leadEmail')
-    df_grouped = grouped.agg({
-        'leadLastName': 'first',
-        'leadFirstName': 'first',
-        'sequenceStep': lambda x: '/'.join(map(str, x.unique())),
-        'createdAt': 'max'
-    }).reset_index()
+    # Grouper par email et séquence, et compter les occurrences
+    df_count = df.groupby(['leadEmail', 'sequenceStep']).size().reset_index(name='Count')
+
+    # Identifier les séquences avec plus d'une ouverture pour chaque email
+    sequences_multiple_openings = df_count[df_count['Count'] > 1].groupby('leadEmail')['sequenceStep'].apply(lambda x: '/'.join(map(str, x.unique()))).reset_index(name='MultipleOpeningsSequenceSteps')
+
+    # Calculer le nombre total d'ouvertures et la dernière date d'ouverture pour chaque email
+    total_openings_and_last_date = df.groupby('leadEmail').agg({'createdAt': 'max', 'leadLastName': 'first', 'leadFirstName': 'first', 'sequenceStep': 'count'}).reset_index()
+
+    # Fusionner les DataFrame
+    df_merged = pd.merge(total_openings_and_last_date, sequences_multiple_openings, on='leadEmail', how='left').fillna('')
 
     # Renommer les colonnes pour plus de clarté
-    df_grouped.rename(columns={'sequenceStep': 'SequenceSteps', 'createdAt': 'LastOpened'}, inplace=True)
+    df_merged.rename(columns={'sequenceStep': 'TotalOpenings', 'createdAt': 'LastOpened', 'MultipleOpeningsSequenceSteps': 'MultipleOpeningsSequenceSteps'}, inplace=True)
 
-    # Compter le nombre total d'ouvertures par email
-    df_grouped['Count'] = grouped.size()
+    # Trier par nombre total d'ouvertures en ordre décroissant
+    df_merged = df_merged.sort_values(by='TotalOpenings', ascending=False)
 
-    # Trier par nombre d'ouvertures en ordre décroissant
-    df_grouped = df_grouped.sort_values(by='Count', ascending=False)
 
     # Exporter en CSV avec le nom incluant l'ID de la campagne
     csv_filename = f'lemlist_activities_{campaign_id}.csv'
-    df_grouped.to_csv(csv_filename, index=False)
+    df_merged.to_csv(csv_filename, index=False)
     print(f"CSV créé : {csv_filename}")
 
 
