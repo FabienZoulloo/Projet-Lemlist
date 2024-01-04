@@ -1,0 +1,1 @@
+gcloud functions deploy get_leads_stats_lemlist --runtime python39 --trigger-http --entry-point cloud_function_main --timeout=540s --region europe-west1

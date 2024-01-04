@@ -1,0 +1,17 @@
+# The .gitignore file specifies intentionally untracked files that Git should ignore.
+
+# Ignore the environment files containing the API keys.
+*.env
+
+# Ignore system files.
+.DS_Store
+Thumbs.db
+
+# Ignore Python's bytecode.
+__pycache__/
+
+# Ignore virtual environment.
+venv/
+
+# Ignore the data folder where we store the CSV files.
+Data/
