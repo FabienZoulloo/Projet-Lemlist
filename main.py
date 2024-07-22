@@ -86,7 +86,7 @@ def create_csv_from_data(data, campaign_id, campaign_name, activity_type, combin
         sequences_multiple_openings = df_count[df_count['Count'] > 1].groupby('leadEmail')['sequenceStep'].apply(lambda x: '/'.join(map(str, x.unique()))).reset_index(name='MultipleOpeningsSequenceSteps')
 
         # Calculer le nombre total d'ouvertures et la dernière date d'ouverture pour chaque email
-        total_openings_and_last_date = df.groupby('leadEmail').agg({'createdAt': 'max', 'leadLastName': 'first', 'leadFirstName': 'first', 'sequenceStep': 'count'}).reset_index()
+        total_openings_and_last_date = df.groupby('leadEmail').agg({'createdAt': 'max', 'leadLastName': 'first', 'leadFirstName': 'first', 'sequenceStep': 'count', 'leadCompanyName': 'first'}).reset_index()
 
         # Fusionner les DataFrame
         df_merged = pd.merge(total_openings_and_last_date, sequences_multiple_openings, on='leadEmail', how='left').fillna('')
@@ -98,7 +98,7 @@ def create_csv_from_data(data, campaign_id, campaign_name, activity_type, combin
         df_merged = df_merged.sort_values(by='TotalOpenings', ascending=False)
     else:  # For bounced emails
         # Sélectionner les colonnes pertinentes pour les emails bounced
-        relevant_columns = ['leadEmail', 'createdAt', 'sequenceStep']
+        relevant_columns = ['leadEmail', 'createdAt', 'sequenceStep', 'leadCompanyName']
         if 'leadLastName' in df.columns and 'leadFirstName' in df.columns:
             relevant_columns.extend(['leadLastName', 'leadFirstName'])
         
