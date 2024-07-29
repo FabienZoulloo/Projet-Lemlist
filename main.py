@@ -61,7 +61,7 @@ def get_lemlist_activities(campaign_id, api_key, activity_type):
         if response.status_code != 200 or not data:
             break
 
-        if not campaign_name:  # Récupérer le nom de la campagne à partir du premier objet
+        if not campaign_name and data:  # Récupérer le nom de la campagne à partir du premier objet
             campaign_name = data[0].get('campaignName', '')
 
         all_activities.extend(data)
@@ -70,6 +70,9 @@ def get_lemlist_activities(campaign_id, api_key, activity_type):
         time.sleep(0.1)  # Ajuste cette valeur si nécessaire
 
     return all_activities, campaign_name
+
+def filter_emails_bounced(data):
+    return [activity for activity in data if activity.get('type') == 'emailsBounced' and activity.get('type') != 'linkedinSendFailed']
 
 def create_csv_from_data(data, campaign_id, campaign_name, activity_type, combined=False):
     # Transformer les données en DataFrame
@@ -147,6 +150,8 @@ def main():
         campaign_id = input("Entrez le campaignID : ")
         activities_data, campaign_name = get_lemlist_activities(campaign_id, api_key, activity_type)
         if activities_data:
+            if activity_type == "emailsBounced":
+                activities_data = filter_emails_bounced(activities_data)
             create_csv_from_data(activities_data, campaign_id, campaign_name, activity_type)
         else:
             print("Erreur lors de la récupération des données ou aucune donnée disponible.")
@@ -158,6 +163,8 @@ def main():
             campaign_name = campaign['name']
             activities_data, _ = get_lemlist_activities(campaign_id, api_key, activity_type)
             if activities_data:
+                if activity_type == "emailsBounced":
+                    activities_data = filter_emails_bounced(activities_data)
                 combined_data.extend(activities_data)
             else:
                 print(f"Aucune donnée disponible pour la campagne {campaign_name} ({campaign_id}).")
